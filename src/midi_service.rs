@@ -1,6 +1,6 @@
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 use std::sync::atomic::{AtomicBool, Ordering};
-use midir::{MidiInput, Ignore};
+use midir::{Ignore, MidiInput, MidiInputConnection};
 
 pub struct MidiService {
     is_gate_open: AtomicBool,
@@ -9,21 +9,23 @@ pub struct MidiService {
 }
 
 pub type SharedMidiService = Arc<RwLock<MidiService>>;
+pub type SharedMidiConnection = Arc<Mutex<Option<MidiInputConnection<()>>>>;
 
 impl MidiService {
-    pub fn new() -> SharedMidiService {
+    pub fn new() -> (Arc<RwLock<MidiService>>, Arc<Mutex<Option<MidiInputConnection<()>>>>) {
         let service = Arc::new(RwLock::new(Self {
             is_gate_open: AtomicBool::new(false),
             active_notes: Vec::new(),
             last_note: None,
         }));
 
-        Self::start_midi_listener(Arc::clone(&service));
+        let midi_connection = Arc::new(Mutex::new(None)); // Изначально соединения нет
+        Self::start_midi_listener(Arc::clone(&service), Arc::clone(&midi_connection));
 
-        service
+        (service, midi_connection)
     }
 
-    fn start_midi_listener(service: SharedMidiService) {
+    fn start_midi_listener(service: SharedMidiService, connection: SharedMidiConnection) {
         let mut midi_in = MidiInput::new("MIDI Service").expect("Failed to open MIDI input");
         midi_in.ignore(Ignore::None);
 
@@ -37,7 +39,7 @@ impl MidiService {
         println!("Using MIDI device: {}", midi_in.port_name(port).unwrap());
 
         let service_clone = Arc::clone(&service);
-        let _connection = midi_in.connect(
+        let conn = midi_in.connect(
             port,
             "midi_service",
             move |_, message, _| {
@@ -73,6 +75,8 @@ impl MidiService {
             },
             (),
         );
+
+        *connection.lock().unwrap() = conn.ok();
     }
 
     pub fn is_open(&self) -> bool {

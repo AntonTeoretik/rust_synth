@@ -32,7 +32,7 @@ impl Oscillator {
 }
 
 impl AudioModule for Oscillator {
-    fn process(&mut self, _input: &[f32], output: &mut [f32]) {
+    fn process(&mut self, output: &mut [f32]) {
         self.update_frequency();
 
         for sample in output.iter_mut() {
