@@ -28,7 +28,7 @@ fn main() {
         .build_output_stream(
             &config.into(),
             move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-                let is_gate_open = midi_clone.is_open();
+                let is_gate_open = midi_clone.read().unwrap().is_open();
                 if is_gate_open {
                     let mut module = module_clone.lock().unwrap();
                     module.process(&[], data);

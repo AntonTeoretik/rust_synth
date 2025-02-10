@@ -1,7 +1,7 @@
 use crate::midi_service::MidiService;
 use crate::audio_module::AudioModule;
 use std::f32::consts::PI;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 fn midi_note_to_freq(note: u8) -> f32 {
     440.0 * (2.0_f32).powf((note as f32 - 69.0) / 12.0)
@@ -11,11 +11,11 @@ pub struct Oscillator {
     pub frequency: f32,
     pub volume: f32,
     phase: f32,
-    midi_service: Arc<MidiService>,
+    midi_service: Arc<RwLock<MidiService>>,
 }
 
 impl Oscillator {
-    pub fn new(midi_service: Arc<MidiService>, volume: f32) -> Self {
+    pub fn new(midi_service: Arc<RwLock<MidiService>>, volume: f32) -> Self {
         Self {
             frequency: 440.0,
             volume,
@@ -25,7 +25,7 @@ impl Oscillator {
     }
 
     fn update_frequency(&mut self) {
-        if let Some(note) = self.midi_service.last_note() {
+        if let Some(note) = self.midi_service.read().unwrap().last_note_read() {
             self.frequency = midi_note_to_freq(note);
         }
     }
