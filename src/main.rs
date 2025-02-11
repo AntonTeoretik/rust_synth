@@ -1,10 +1,10 @@
 mod modules;
 mod midi_service;
 
-use modules::{audio_module::{AudioModule, Shared}, delay::Delay, gain::Gain, gate::Gate, lp_filter::LowPassFilter, oscillator::Oscillator};
 use midi_service::MidiService;
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use modules::{delay::Delay, gain::Gain, gate::Gate, lp_filter::LowPassFilter, oscillator::Oscillator, AudioModule, Shared};
 
 fn main() {
     let host = cpal::default_host();

@@ -1,4 +1,4 @@
-use crate::modules::audio_module::AudioModule;
+use crate::modules::AudioModule;
 use crate::modules::gate::Gate;
 
 pub struct LowPassFilter {

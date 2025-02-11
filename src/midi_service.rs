@@ -79,10 +79,6 @@ impl MidiService {
         *connection.lock().unwrap() = conn.ok();
     }
 
-    pub fn is_open(&self) -> bool {
-        self.is_gate_open.load(Ordering::Relaxed)
-    }
-
     pub fn last_note_read(&self) -> Option<u8> {
         self.last_note
     }
