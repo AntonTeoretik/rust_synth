@@ -2,21 +2,27 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::sync::atomic::{AtomicBool, Ordering};
 use midir::{Ignore, MidiInput, MidiInputConnection};
 
+use crate::modules::params::SynthParams;
+
 pub struct MidiService {
-    is_gate_open: AtomicBool,
     active_notes: Vec<u8>,
     last_note: Option<u8>,
+    params: Arc<SynthParams>,
 }
 
 pub type SharedMidiService = Arc<RwLock<MidiService>>;
 pub type SharedMidiConnection = Arc<Mutex<Option<MidiInputConnection<()>>>>;
 
+fn midi_note_to_freq(note: u8) -> f32 {
+    440.0 * (2.0_f32).powf((note as f32 - 69.0) / 12.0)
+}
+
 impl MidiService {
-    pub fn new() -> (Arc<RwLock<MidiService>>, Arc<Mutex<Option<MidiInputConnection<()>>>>) {
+    pub fn new(params: Arc<SynthParams>) -> (Arc<RwLock<MidiService>>, Arc<Mutex<Option<MidiInputConnection<()>>>>) {
         let service = Arc::new(RwLock::new(Self {
-            is_gate_open: AtomicBool::new(false),
             active_notes: Vec::new(),
             last_note: None,
+            params
         }));
 
         let midi_connection = Arc::new(Mutex::new(None)); // Изначально соединения нет
@@ -57,7 +63,6 @@ impl MidiService {
                         service.active_notes.push(note);
                         service.last_note = Some(note);
                     }
-                    service.is_gate_open.store(true, Ordering::Relaxed);
                 } else if ((status & 0xF0 == 0x80) || ((status & 0xF0 == 0x90) && velocity == 0))
                     && (status & 0x0F == 0)
                 {
@@ -69,9 +74,12 @@ impl MidiService {
                         service.last_note = Some(new_note);
                     } else {
                         service.last_note = None;
-                        service.is_gate_open.store(false, Ordering::Relaxed);
                     }
                 }
+
+                service.params.are_active_notes.store(!service.active_notes.is_empty(), Ordering::Relaxed);
+                service.params.main_freq.store(midi_note_to_freq(note).to_bits(), Ordering::Relaxed);
+
             },
             (),
         );
