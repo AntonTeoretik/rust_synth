@@ -1,5 +1,5 @@
 use crate::midi_service::MidiService;
-use crate::audio_module::AudioModule;
+use crate::modules::audio_module::AudioModule;
 use std::sync::{Arc, RwLock};
 
 pub struct Gate {

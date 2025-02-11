@@ -1,5 +1,5 @@
 use crate::midi_service::MidiService;
-use crate::audio_module::AudioModule;
+use crate::modules::audio_module::AudioModule;
 use std::f32::consts::PI;
 use std::sync::{Arc, RwLock};
 

@@ -1,21 +1,8 @@
-mod audio_module;
+mod modules;
 mod midi_service;
-mod oscillator;
 
-mod gate;
-mod gain;
-mod delay;
-mod lp_filter;
-
+use modules::{audio_module::{AudioModule, Shared}, delay::Delay, gain::Gain, gate::Gate, lp_filter::LowPassFilter, oscillator::Oscillator};
 use midi_service::MidiService;
-use std::sync::{Arc, Mutex};
-
-use audio_module::{AudioModule, Shared};
-use oscillator::Oscillator;
-use gate::Gate;
-use gain::Gain;
-use delay::Delay;
-use lp_filter::LowPassFilter;
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 

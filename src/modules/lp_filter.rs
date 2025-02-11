@@ -1,5 +1,5 @@
-use crate::audio_module::AudioModule;
-use crate::gate::Gate;
+use crate::modules::audio_module::AudioModule;
+use crate::modules::gate::Gate;
 
 pub struct LowPassFilter {
     cutoff: f32,

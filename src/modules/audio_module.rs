@@ -14,5 +14,4 @@ pub trait Shared {
     }
 }
 
-// 🛠 Автоматически реализуем Shared для всех AudioModule!
 impl<T: AudioModule> Shared for T {}
