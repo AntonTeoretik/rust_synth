@@ -7,14 +7,13 @@ pub struct Gate {
     decay: f32,
     sustain: f32,
     release: f32,
-    envelope: f32,
+    pub envelope: f32,
     state: GateState,
     midi_service: Arc<RwLock<MidiService>>,
 }
 
 #[derive(PartialEq)]
 enum GateState {
-    Idle,
     Attack,
     Decay,
     Sustain,
@@ -29,7 +28,7 @@ impl Gate {
             sustain,
             release,
             envelope: 0.0,
-            state: GateState::Idle,
+            state: GateState::Release,
             midi_service,
         }
     }
@@ -37,16 +36,15 @@ impl Gate {
     fn update_state(&mut self) {
         let has_active_notes = !self.midi_service.read().unwrap().active_notes_read().is_empty();
         match self.state {
-            GateState::Idle if has_active_notes => self.state = GateState::Attack,
+            GateState::Release if has_active_notes => self.state = GateState::Attack,
             GateState::Attack | GateState::Decay | GateState::Sustain if !has_active_notes => self.state = GateState::Release,
             _ => {}
         }
     }
 
-    fn next_envelope_value(&mut self) {
+    pub fn next_envelope_value(&mut self) {
         self.update_state();
         match self.state {
-            GateState::Idle => {}
             GateState::Attack => {
                 self.envelope += 1.0 / (self.attack * 44100.0);
                 if self.envelope >= 1.0 {
@@ -63,10 +61,9 @@ impl Gate {
             }
             GateState::Sustain => {}
             GateState::Release => {
-                self.envelope -= self.sustain / (self.release * 44100.0);
+                self.envelope -= 1.0 / (self.release * 44100.0);
                 if self.envelope <= 0.0 {
                     self.envelope = 0.0;
-                    self.state = GateState::Idle;
                 }
             }
         }
