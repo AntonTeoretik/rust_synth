@@ -29,8 +29,8 @@ impl AudioModule for LowPassFilter {
         
         for sample in output.iter_mut() {
             self.gate.next_envelope_value();
-            let modulated_cutoff = self.cutoff + self.gate.envelope * self.mod_depth;
-            let alpha = (2.0 * std::f32::consts::PI * modulated_cutoff / (SAMPLE_RATE + 2.0 * std::f32::consts::PI * modulated_cutoff)).clamp(0.0, 1.0);
+            let modulated_cutoff = self.cutoff * (2.0_f32).powf(self.gate.envelope * self.mod_depth);
+            let alpha = 2.0 * std::f32::consts::PI * modulated_cutoff / (SAMPLE_RATE + 2.0 * std::f32::consts::PI * modulated_cutoff);
         
             let filtered = alpha * *sample + (1.0 - alpha) * self.prev_output;
             self.prev_output = filtered + (filtered - self.prev_output) * self.res_factor;

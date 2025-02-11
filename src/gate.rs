@@ -53,7 +53,7 @@ impl Gate {
                 }
             }
             GateState::Decay => {
-                self.envelope -= (1.0 - self.sustain) / (self.decay * 44100.0);
+                self.envelope -= 1.0 / (self.decay * 44100.0);
                 if self.envelope <= self.sustain {
                     self.envelope = self.sustain;
                     self.state = GateState::Sustain;
