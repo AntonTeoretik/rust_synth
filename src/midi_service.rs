@@ -1,5 +1,4 @@
 use std::sync::{Arc, Mutex, RwLock};
-use std::sync::atomic::{AtomicBool, Ordering};
 use midir::{Ignore, MidiInput, MidiInputConnection};
 
 use crate::modules::params::SynthParams;
@@ -13,17 +12,21 @@ pub struct MidiService {
 pub type SharedMidiService = Arc<RwLock<MidiService>>;
 pub type SharedMidiConnection = Arc<Mutex<Option<MidiInputConnection<()>>>>;
 
-fn midi_note_to_freq(note: u8) -> f32 {
-    440.0 * (2.0_f32).powf((note as f32 - 69.0) / 12.0)
-}
+pub const P_LAST_ACTIVE_NOTE : &str = "LastActiveNote";
+pub const P_ARE_ACTIVE_NOTES : &str = "AreActiveNotes";
 
 impl MidiService {
     pub fn new(params: Arc<SynthParams>) -> (Arc<RwLock<MidiService>>, Arc<Mutex<Option<MidiInputConnection<()>>>>) {
+        params.register_param_u8(P_LAST_ACTIVE_NOTE, 0);
+        params.register_param_u8(P_ARE_ACTIVE_NOTES, 0);
+
+
         let service = Arc::new(RwLock::new(Self {
             active_notes: Vec::new(),
             last_note: None,
             params
         }));
+
 
         let midi_connection = Arc::new(Mutex::new(None)); // Изначально соединения нет
         Self::start_midi_listener(Arc::clone(&service), Arc::clone(&midi_connection));
@@ -77,9 +80,8 @@ impl MidiService {
                     }
                 }
 
-                service.params.are_active_notes.store(!service.active_notes.is_empty(), Ordering::Relaxed);
-                service.params.main_freq.store(midi_note_to_freq(note).to_bits(), Ordering::Relaxed);
-
+                service.params.set_param_u8(P_LAST_ACTIVE_NOTE, note);
+                service.params.set_param_u8(P_ARE_ACTIVE_NOTES, !service.active_notes.is_empty() as u8);
             },
             (),
         );

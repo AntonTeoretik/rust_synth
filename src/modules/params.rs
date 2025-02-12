@@ -1,31 +1,74 @@
-use std::sync::{atomic::{AtomicBool, AtomicU32, Ordering}, Arc};
+use std::collections::HashMap;
+use std::fmt;
+use std::sync::{Arc, RwLock};
+use std::sync::atomic::{AtomicU32, Ordering};
 
 pub struct SynthParams {
-    pub cutoff: AtomicU32,
-    pub resonance: AtomicU32,
-    pub gain: AtomicU32,
-    pub main_freq: AtomicU32,
-    pub sample_rate: AtomicU32,
-    pub are_active_notes: AtomicBool,
+    params: RwLock<HashMap<String, AtomicU32>>,
 }
 
 impl SynthParams {
     pub fn new() -> Arc<Self> {
         Arc::new(Self {
-            cutoff: AtomicU32::new(1000.0f32.to_bits()),
-            resonance: AtomicU32::new(0.5f32.to_bits()),
-            gain: AtomicU32::new(1.0f32.to_bits()),
-            main_freq: AtomicU32::new(440.0f32.to_bits()),
-            sample_rate: AtomicU32::new(44100.0f32.to_bits()),
-            are_active_notes: AtomicBool::new(false)
+            params: RwLock::new(HashMap::new()),
         })
     }
 
-    pub fn set_sample_rate(&self, value: f32) {
-        self.sample_rate.store(value.to_bits(), Ordering::Relaxed);
+    pub fn register_param_f32(&self, name: &str, default_value: f32) {
+        if let Ok(mut params) = self.params.write() {
+            params.insert(name.to_string(), AtomicU32::new(default_value.to_bits()));
+        }
     }
 
-    pub fn get_sample_rate(&self) -> f32 {
-        f32::from_bits(self.sample_rate.load(Ordering::Relaxed))
+    pub fn get_param_f32(&self, name: &str) -> f32 {
+        if let Ok(params) = self.params.read() {
+            if let Some(p) = params.get(name) {
+                return f32::from_bits(p.load(Ordering::Relaxed));
+            }
+        }
+        0.0
+    }
+
+    pub fn set_param_f32(&self, name: &str, value: f32) {
+        if let Ok(params) = self.params.read() {
+            if let Some(param) = params.get(name) {
+                param.store(value.to_bits(), Ordering::Relaxed);
+            }
+        }
+    }
+
+    pub fn register_param_u8(&self, name: &str, default_value: u8) {
+        if let Ok(mut params) = self.params.write() {
+            params.insert(name.to_string(), AtomicU32::new(default_value as u32));
+        }
+    }
+
+    pub fn get_param_u8(&self, name: &str) -> u8 {
+        if let Ok(params) = self.params.read() {
+            if let Some(p) = params.get(name) {
+                return p.load(Ordering::Relaxed) as u8;
+            }
+        }
+        0
+    }
+
+    pub fn set_param_u8(&self, name: &str, value: u8) {
+        if let Ok(params) = self.params.read() {
+            if let Some(param) = params.get(name) {
+                param.store(value as u32, Ordering::Relaxed);
+            }
+        }
+    }
+}
+
+impl fmt::Display for SynthParams {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if let Ok(params) = self.params.read() {
+            writeln!(f, "SynthParams:")?;
+            for (key, value) in params.iter() {
+                writeln!(f, "{}: {}", key, f32::from_bits(value.load(Ordering::Relaxed)))?;
+            }
+        }
+        Ok(())
     }
 }

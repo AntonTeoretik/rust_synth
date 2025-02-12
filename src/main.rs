@@ -15,12 +15,10 @@ fn main() {
 
     println!("Outputting sound to device: {}", device.name().unwrap());
 
-    let volume = 1.0;
-
     let params = SynthParams::new();
 
     let (midi_service, _midi_connection) = MidiService::new(Arc::clone(&params));
-    let oscillator = Oscillator::new(Arc::clone(&params)).shared();
+    let oscillator = Oscillator::new(Arc::clone(&params), 0).shared();
     let gate = Gate::new(midi_service.clone(), 0.1, 1.0, 1.0, 20.0).shared();
     let gain = Gain::new(20.0).shared();
 
@@ -28,6 +26,12 @@ fn main() {
     let lp_filter = LowPassFilter::new(55.0, 0.99, 10.0, filter_gate).shared();
 
     let delay = Delay::new(1000.0, 0.4, 0.4).shared();
+
+
+    println!("{}", &oscillator.lock().unwrap().volume_param);
+    params.set_param_f32(&oscillator.lock().unwrap().volume_param, 1.0);
+
+    println!("{}", params);
 
     let stream = device
         .build_output_stream(
