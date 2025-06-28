@@ -1,10 +1,10 @@
-use crate::midi_service::P_LAST_ACTIVE_NOTE;
 use crate::audio_modules::params::SynthParams;
 use crate::audio_modules::AudioModule;
+use crate::midi_service::P_LAST_ACTIVE_NOTE;
 use std::f32::consts::PI;
 use std::sync::Arc;
 
-const SAMPLE_RATE : f32 = 44100.0;
+const SAMPLE_RATE: f32 = 44100.0;
 
 fn midi_note_to_freq(note: u8) -> f32 {
     440.0 * (2.0_f32).powf((note as f32 - 69.0) / 12.0)
@@ -20,14 +20,14 @@ pub struct Oscillator {
 impl Oscillator {
     pub fn new(params: Arc<SynthParams>, id: usize) -> Self {
         let volume_param = format!("osc_{}_volume", id);
-        
-        params.register_param_f32(&volume_param, 440.0);
-        
+
+        params.register_param_f32(&volume_param, 1.0);
+
         Self {
             params,
             phase: 0.0,
             sample_rate: 0.0,
-            volume_param
+            volume_param,
         }
     }
 
