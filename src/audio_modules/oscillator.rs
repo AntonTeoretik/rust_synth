@@ -1,6 +1,6 @@
 use crate::midi_service::P_LAST_ACTIVE_NOTE;
-use crate::modules::params::SynthParams;
-use crate::modules::AudioModule;
+use crate::audio_modules::params::SynthParams;
+use crate::audio_modules::AudioModule;
 use std::f32::consts::PI;
 use std::sync::Arc;
 

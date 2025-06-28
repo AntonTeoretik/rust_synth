@@ -1,5 +1,5 @@
+use crate::audio_modules::AudioModule;
 use crate::midi_service::MidiService;
-use crate::modules::AudioModule;
 use std::sync::{Arc, RwLock};
 
 pub struct Gate {
@@ -21,7 +21,13 @@ enum GateState {
 }
 
 impl Gate {
-    pub fn new(midi_service: Arc<RwLock<MidiService>>, attack: f32, decay: f32, sustain: f32, release: f32) -> Self {
+    pub fn new(
+        midi_service: Arc<RwLock<MidiService>>,
+        attack: f32,
+        decay: f32,
+        sustain: f32,
+        release: f32,
+    ) -> Self {
         Self {
             attack,
             decay,
@@ -34,10 +40,17 @@ impl Gate {
     }
 
     fn update_state(&mut self) {
-        let has_active_notes = !self.midi_service.read().unwrap().active_notes_read().is_empty();
+        let has_active_notes = !self
+            .midi_service
+            .read()
+            .unwrap()
+            .active_notes_read()
+            .is_empty();
         match self.state {
             GateState::Release if has_active_notes => self.state = GateState::Attack,
-            GateState::Attack | GateState::Decay | GateState::Sustain if !has_active_notes => self.state = GateState::Release,
+            GateState::Attack | GateState::Decay | GateState::Sustain if !has_active_notes => {
+                self.state = GateState::Release
+            }
             _ => {}
         }
     }

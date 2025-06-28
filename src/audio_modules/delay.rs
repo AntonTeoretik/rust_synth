@@ -1,5 +1,4 @@
-use crate::modules::AudioModule;
-
+use crate::audio_modules::AudioModule;
 
 pub struct Delay {
     buffer: Vec<f32>,

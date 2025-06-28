@@ -1,4 +1,4 @@
-use crate::modules::AudioModule;
+use crate::audio_modules::AudioModule;
 
 pub struct Gain {
     gain: f32,

@@ -1,12 +1,15 @@
-mod modules;
+mod audio_modules;
 mod midi_service;
 
 use std::sync::Arc;
 
 use midi_service::MidiService;
 
+use audio_modules::{
+    delay::Delay, gain::Gain, gate::Gate, lp_filter::LowPassFilter, oscillator::Oscillator,
+    params::SynthParams, AudioModule, Shared,
+};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use modules::{delay::Delay, gain::Gain, gate::Gate, lp_filter::LowPassFilter, oscillator::Oscillator, params::SynthParams, AudioModule, Shared};
 
 fn main() {
     let host = cpal::default_host();
@@ -26,7 +29,6 @@ fn main() {
     let lp_filter = LowPassFilter::new(55.0, 0.99, 10.0, filter_gate).shared();
 
     let delay = Delay::new(1000.0, 0.4, 0.4).shared();
-
 
     println!("{}", &oscillator.lock().unwrap().volume_param);
     params.set_param_f32(&oscillator.lock().unwrap().volume_param, 1.0);

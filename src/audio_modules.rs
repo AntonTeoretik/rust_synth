@@ -1,13 +1,13 @@
 use std::sync::{Arc, Mutex};
 
-pub mod oscillator;
-pub mod gate;
-pub mod gain;
-pub mod lp_filter;
 pub mod delay;
+pub mod gain;
+pub mod gate;
+pub mod lp_filter;
+pub mod oscillator;
 pub mod params;
 
-pub trait AudioModule : Send + Sync {
+pub trait AudioModule: Send + Sync {
     fn process(&mut self, output: &mut [f32]);
 }
 
