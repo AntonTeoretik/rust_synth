@@ -13,7 +13,6 @@ fn midi_note_to_freq(note: u8) -> f32 {
 pub struct Oscillator {
     params: Arc<SynthParams>,
     phase: f32,
-    sample_rate: f32,
     pub volume_param: String,
 }
 
@@ -26,7 +25,6 @@ impl Oscillator {
         Self {
             params,
             phase: 0.0,
-            sample_rate: 0.0,
             volume_param,
         }
     }
@@ -45,7 +43,7 @@ impl AudioModule for Oscillator {
         let sample_rate = SAMPLE_RATE;
 
         for sample in output.iter_mut() {
-            *sample = (self.phase * 2.0 * PI).sin() * volume;
+            *sample += (self.phase * 2.0 * PI).sin() * volume;
             self.phase += frequency / sample_rate;
             if self.phase > 1.0 {
                 self.phase -= 1.0;
