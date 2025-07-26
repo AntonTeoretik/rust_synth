@@ -27,27 +27,23 @@ fn init_audio_device() -> (Device, SupportedStreamConfig) {
 
 fn init_synth_core() -> (
     Arc<SynthParams>,
-    Arc<RwLock<MidiService>>,
     Arc<Mutex<Option<MidiInputConnection<()>>>>,
 ) {
     let params = SynthParams::new();
-    let (midi_service, _midi_connection) = MidiService::new(Arc::clone(&params));
+    let _midi_connection = MidiService::new(Arc::clone(&params));
 
-    (params, midi_service, _midi_connection)
+    (params, _midi_connection)
 }
 
-fn build_audio_modules(
-    params: &Arc<SynthParams>,
-    midi_service: &Arc<RwLock<MidiService>>,
-) -> Vec<Arc<Mutex<dyn AudioModule>>> {
+fn build_audio_modules(params: &Arc<SynthParams>) -> Vec<Arc<Mutex<dyn AudioModule>>> {
     let osc = Oscillator::new(Arc::clone(&params), 0).shared();
-    let gate = Gate::new(midi_service.clone(), 0.05, 0.2, 0.0, 1.0).shared();
+    let gate = Gate::new(Arc::clone(&params), 0.05, 0.2, 0.0, 1.0).shared();
     let gain = Gain::new(1.0).shared();
 
-    let filter_gate = Gate::new(midi_service.clone(), 0.01, 0.1, 0.1, 5.0);
+    let filter_gate = Gate::new(Arc::clone(&params), 0.01, 0.1, 0.1, 5.0);
     let lp_filter = LowPassFilter::new(55.0, 0.99, 10.0, filter_gate).shared();
 
-    let delay = Delay::new(1000.0, 0.0, 0.0).shared();
+    let delay = Delay::new(1000.0, 0.1, 0.5).shared();
 
     vec![osc, gate, gain, lp_filter, delay]
 }
@@ -73,9 +69,9 @@ fn start_audio_stream(
 
 fn main() {
     let (device, config) = init_audio_device();
-    let (params, midi_service, _midi_connection) = init_synth_core();
+    let (params, _midi_connection) = init_synth_core();
 
-    let modules = build_audio_modules(&params, &midi_service);
+    let modules = build_audio_modules(&params);
 
     let stream = start_audio_stream(device, config.config(), modules);
     stream.play().unwrap();

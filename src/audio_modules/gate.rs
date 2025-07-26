@@ -1,7 +1,7 @@
 use crate::audio_modules::AudioModule;
-use crate::midi_service::MidiService;
+use crate::SynthParams;
 use std::sync::atomic::Ordering;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 pub struct Gate {
     attack: f32,
@@ -10,7 +10,7 @@ pub struct Gate {
     release: f32,
     pub envelope: f32,
     state: GateState,
-    midi_service: Arc<RwLock<MidiService>>,
+    synth_params: Arc<SynthParams>,
 }
 
 #[derive(PartialEq)]
@@ -23,7 +23,7 @@ enum GateState {
 
 impl Gate {
     pub fn new(
-        midi_service: Arc<RwLock<MidiService>>,
+        synth_params: Arc<SynthParams>,
         attack: f32,
         decay: f32,
         sustain: f32,
@@ -36,19 +36,12 @@ impl Gate {
             release,
             envelope: 0.0,
             state: GateState::Release,
-            midi_service,
+            synth_params,
         }
     }
 
     fn update_state(&mut self) {
-        let has_active_notes = self
-            .midi_service
-            .read()
-            .unwrap()
-            .params
-            .are_active_notes
-            .load(Ordering::Relaxed)
-            > 0;
+        let has_active_notes = self.synth_params.are_active_notes.load(Ordering::Relaxed) > 0;
         match self.state {
             GateState::Release if has_active_notes => self.state = GateState::Attack,
             GateState::Attack | GateState::Decay | GateState::Sustain if !has_active_notes => {

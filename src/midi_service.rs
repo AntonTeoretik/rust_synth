@@ -14,12 +14,7 @@ pub type SharedMidiService = Arc<RwLock<MidiService>>;
 pub type SharedMidiConnection = Arc<Mutex<Option<MidiInputConnection<()>>>>;
 
 impl MidiService {
-    pub fn new(
-        params: Arc<SynthParams>,
-    ) -> (
-        Arc<RwLock<MidiService>>,
-        Arc<Mutex<Option<MidiInputConnection<()>>>>,
-    ) {
+    pub fn new(params: Arc<SynthParams>) -> Arc<Mutex<Option<MidiInputConnection<()>>>> {
         let service = Arc::new(RwLock::new(Self {
             active_notes: Vec::new(),
             last_note: None,
@@ -29,7 +24,7 @@ impl MidiService {
         let midi_connection = Arc::new(Mutex::new(None)); // Изначально соединения нет
         Self::start_midi_listener(Arc::clone(&service), Arc::clone(&midi_connection));
 
-        (service, midi_connection)
+        midi_connection
     }
 
     fn start_midi_listener(service: SharedMidiService, connection: SharedMidiConnection) {
