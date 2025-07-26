@@ -41,13 +41,13 @@ fn build_audio_modules(
     midi_service: &Arc<RwLock<MidiService>>,
 ) -> Vec<Arc<Mutex<dyn AudioModule>>> {
     let osc = Oscillator::new(Arc::clone(&params), 0).shared();
-    let gate = Gate::new(midi_service.clone(), 0.1, 1.0, 1.0, 20.0).shared();
-    let gain = Gain::new(20.0).shared();
+    let gate = Gate::new(midi_service.clone(), 0.05, 0.2, 0.0, 1.0).shared();
+    let gain = Gain::new(1.0).shared();
 
-    let filter_gate = Gate::new(midi_service.clone(), 0.3, 10.0, 1.0, 5.0);
+    let filter_gate = Gate::new(midi_service.clone(), 0.01, 0.1, 0.1, 5.0);
     let lp_filter = LowPassFilter::new(55.0, 0.99, 10.0, filter_gate).shared();
 
-    let delay = Delay::new(1000.0, 0.4, 0.4).shared();
+    let delay = Delay::new(1000.0, 0.0, 0.0).shared();
 
     vec![osc, gate, gain, lp_filter, delay]
 }
