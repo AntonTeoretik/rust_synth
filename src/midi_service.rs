@@ -55,38 +55,7 @@ impl MidiService {
             port,
             "midi_service",
             move |_, message, _| {
-                if message.len() < 3 {
-                    return;
-                }
-                let status = message[0];
-                let note = message[1];
-                let velocity = message[2];
-
-                let mut service = service_clone.write().unwrap();
-
-                if (status & 0xF0 == 0x90) && (status & 0x0F == 0) && velocity > 0 {
-                    if !service.active_notes.contains(&note) {
-                        service.active_notes.push(note);
-                        service.last_note = Some(note);
-                    }
-                } else if ((status & 0xF0 == 0x80) || ((status & 0xF0 == 0x90) && velocity == 0))
-                    && (status & 0x0F == 0)
-                {
-                    if let Some(pos) = service.active_notes.iter().position(|&n| n == note) {
-                        service.active_notes.remove(pos);
-                    }
-
-                    if let Some(&new_note) = service.active_notes.last() {
-                        service.last_note = Some(new_note);
-                    } else {
-                        service.last_note = None;
-                    }
-                }
-
-                service.params.set_param_u8(P_LAST_ACTIVE_NOTE, note);
-                service
-                    .params
-                    .set_param_u8(P_ARE_ACTIVE_NOTES, !service.active_notes.is_empty() as u8);
+                Self::handle_message(message, &service_clone);
             },
             (),
         );
@@ -94,8 +63,39 @@ impl MidiService {
         *connection.lock().unwrap() = conn.ok();
     }
 
-    pub fn last_note_read(&self) -> Option<u8> {
-        self.last_note
+    fn handle_message(message: &[u8], service_clone: &SharedMidiService) {
+        if message.len() < 3 {
+            return;
+        }
+        let status = message[0];
+        let note = message[1];
+        let velocity = message[2];
+
+        let mut service = service_clone.write().unwrap();
+
+        if (status & 0xF0 == 0x90) && (status & 0x0F == 0) && velocity > 0 {
+            if !service.active_notes.contains(&note) {
+                service.active_notes.push(note);
+                service.last_note = Some(note);
+            }
+        } else if ((status & 0xF0 == 0x80) || ((status & 0xF0 == 0x90) && velocity == 0))
+            && (status & 0x0F == 0)
+        {
+            if let Some(pos) = service.active_notes.iter().position(|&n| n == note) {
+                service.active_notes.remove(pos);
+            }
+
+            if let Some(&new_note) = service.active_notes.last() {
+                service.last_note = Some(new_note);
+            } else {
+                service.last_note = None;
+            }
+        }
+
+        service.params.set_param_u8(P_LAST_ACTIVE_NOTE, note);
+        service
+            .params
+            .set_param_u8(P_ARE_ACTIVE_NOTES, !service.active_notes.is_empty() as u8);
     }
 
     pub fn active_notes_read(&self) -> Vec<u8> {
