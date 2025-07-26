@@ -1,5 +1,6 @@
 use crate::audio_modules::AudioModule;
 use crate::midi_service::MidiService;
+use std::sync::atomic::Ordering;
 use std::sync::{Arc, RwLock};
 
 pub struct Gate {
@@ -40,12 +41,14 @@ impl Gate {
     }
 
     fn update_state(&mut self) {
-        let has_active_notes = !self
+        let has_active_notes = self
             .midi_service
             .read()
             .unwrap()
-            .active_notes_read()
-            .is_empty();
+            .params
+            .are_active_notes
+            .load(Ordering::Relaxed)
+            > 0;
         match self.state {
             GateState::Release if has_active_notes => self.state = GateState::Attack,
             GateState::Attack | GateState::Decay | GateState::Sustain if !has_active_notes => {

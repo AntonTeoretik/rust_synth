@@ -7,7 +7,7 @@ use crate::audio_modules::params::SynthParams;
 pub struct MidiService {
     active_notes: Vec<u8>,
     last_note: Option<u8>,
-    params: Arc<SynthParams>,
+    pub params: Arc<SynthParams>,
 }
 
 pub type SharedMidiService = Arc<RwLock<MidiService>>;
@@ -95,9 +95,5 @@ impl MidiService {
             .params
             .are_active_notes
             .store(!service.active_notes.is_empty() as u8, Ordering::Relaxed);
-    }
-
-    pub fn active_notes_read(&self) -> Vec<u8> {
-        self.active_notes.clone()
     }
 }
