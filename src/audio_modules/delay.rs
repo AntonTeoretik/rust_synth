@@ -26,7 +26,7 @@ impl AudioModule for Delay {
     fn process(&mut self, output: &mut [f32]) {
         for sample in output.iter_mut() {
             let delayed_sample = self.buffer[self.buffer_index];
-            self.buffer[self.buffer_index] = *sample + delayed_sample * self.feedback;
+            self.buffer[self.buffer_index] = (*sample + delayed_sample) * self.feedback;
             self.buffer_index = (self.buffer_index + 1) % self.delay_samples;
             *sample = *sample * (1.0 - self.wet_mix) + delayed_sample * self.wet_mix;
         }

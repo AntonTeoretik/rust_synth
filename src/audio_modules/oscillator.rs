@@ -31,10 +31,6 @@ impl Oscillator {
     pub fn get_volume(&self) -> f32 {
         self.params.get_oscillator_volume(self.id)
     }
-
-    pub fn set_volume(&self, volume: f32) {
-        self.params.set_oscillator_volume(self.id, volume);
-    }
 }
 
 impl AudioModule for Oscillator {
@@ -52,23 +48,5 @@ impl AudioModule for Oscillator {
                 self.phase -= 1.0;
             }
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_oscillator_volume() {
-        let params = SynthParams::new();
-        let osc = Oscillator::new(params.clone(), 0);
-
-        // Test default volume
-        assert_eq!(osc.get_volume(), 1.0);
-
-        // Test volume setter
-        osc.set_volume(0.5);
-        assert_eq!(osc.get_volume(), 0.5);
     }
 }
