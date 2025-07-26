@@ -1,7 +1,7 @@
 mod audio_modules;
 mod midi_service;
 
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 
 use midi_service::MidiService;
 

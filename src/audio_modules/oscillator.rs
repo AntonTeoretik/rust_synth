@@ -1,4 +1,4 @@
-use crate::audio_modules::params::SynthParams;
+use crate::audio_modules::params::{SynthParams, MAX_OSCILLATORS};
 use crate::audio_modules::AudioModule;
 use std::f32::consts::PI;
 use std::sync::atomic::Ordering;
@@ -18,8 +18,8 @@ pub struct Oscillator {
 
 impl Oscillator {
     pub fn new(params: Arc<SynthParams>, id: usize) -> Self {
-        // Initialize volume in shared params
-        params.init_oscillator_volume(id);
+        // ID must be within array bounds
+        assert!(id < MAX_OSCILLATORS);
 
         Self {
             params,
@@ -29,7 +29,9 @@ impl Oscillator {
     }
 
     pub fn get_volume(&self) -> f32 {
-        self.params.get_oscillator_volume(self.id)
+        let raw_volume =
+            self.params.oscillator_volumes[self.id].load(std::sync::atomic::Ordering::Relaxed);
+        raw_volume as f32 / 255.0
     }
 }
 

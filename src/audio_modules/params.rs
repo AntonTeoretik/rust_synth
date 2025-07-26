@@ -1,39 +1,25 @@
-use std::collections::HashMap;
-use std::sync::{atomic::AtomicU8, Arc, RwLock};
+use std::sync::{atomic::AtomicU8, Arc};
+
+pub const MAX_OSCILLATORS: usize = 8;
+pub const MAX_VOLUME: u8 = 255;
 
 pub struct SynthParams {
     // MIDI parameters
     pub last_active_note: AtomicU8,
     pub are_active_notes: AtomicU8,
 
-    // Oscillator volumes (wrapped in RwLock for thread-safe mutation)
-    oscillator_volumes: RwLock<HashMap<usize, RwLock<f32>>>,
+    // Oscillator volumes (fixed-size array)
+    pub oscillator_volumes: [AtomicU8; MAX_OSCILLATORS],
 }
 
 impl SynthParams {
     pub fn new() -> Arc<Self> {
+        let volumes = [(); MAX_OSCILLATORS].map(|_| AtomicU8::new(MAX_VOLUME));
+
         Arc::new(Self {
             last_active_note: AtomicU8::new(0),
             are_active_notes: AtomicU8::new(0),
-            oscillator_volumes: RwLock::new(HashMap::new()),
+            oscillator_volumes: volumes,
         })
-    }
-
-    pub fn init_oscillator_volume(&self, id: usize) {
-        self.oscillator_volumes
-            .write()
-            .unwrap()
-            .insert(id, RwLock::new(1.0));
-    }
-
-    pub fn get_oscillator_volume(&self, id: usize) -> f32 {
-        *self
-            .oscillator_volumes
-            .read()
-            .unwrap()
-            .get(&id)
-            .unwrap()
-            .read()
-            .unwrap()
     }
 }
