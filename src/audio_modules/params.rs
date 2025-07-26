@@ -1,74 +1,98 @@
 use std::collections::HashMap;
 use std::fmt;
-use std::sync::{Arc, RwLock};
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::{
+    atomic::{AtomicU8, Ordering},
+    Arc, RwLock,
+};
 
 pub struct SynthParams {
-    params: RwLock<HashMap<String, AtomicU32>>,
+    // MIDI parameters
+    pub last_active_note: AtomicU8,
+    pub are_active_notes: AtomicU8,
+
+    // Oscillator volumes (wrapped in RwLock for thread-safe mutation)
+    oscillator_volumes: RwLock<HashMap<usize, RwLock<f32>>>,
 }
 
 impl SynthParams {
     pub fn new() -> Arc<Self> {
         Arc::new(Self {
-            params: RwLock::new(HashMap::new()),
+            last_active_note: AtomicU8::new(0),
+            are_active_notes: AtomicU8::new(0),
+            oscillator_volumes: RwLock::new(HashMap::new()),
         })
     }
 
-    pub fn register_param_f32(&self, name: &str, default_value: f32) {
-        if let Ok(mut params) = self.params.write() {
-            params.insert(name.to_string(), AtomicU32::new(default_value.to_bits()));
-        }
+    pub fn init_oscillator_volume(&self, id: usize) {
+        self.oscillator_volumes
+            .write()
+            .unwrap()
+            .insert(id, RwLock::new(1.0));
     }
 
-    pub fn get_param_f32(&self, name: &str) -> f32 {
-        if let Ok(params) = self.params.read() {
-            if let Some(p) = params.get(name) {
-                return f32::from_bits(p.load(Ordering::Relaxed));
-            }
-        }
-        0.0
+    pub fn get_oscillator_volume(&self, id: usize) -> f32 {
+        *self
+            .oscillator_volumes
+            .read()
+            .unwrap()
+            .get(&id)
+            .unwrap()
+            .read()
+            .unwrap()
     }
 
-    pub fn set_param_f32(&self, name: &str, value: f32) {
-        if let Ok(params) = self.params.read() {
-            if let Some(param) = params.get(name) {
-                param.store(value.to_bits(), Ordering::Relaxed);
-            }
-        }
-    }
-
-    pub fn register_param_u8(&self, name: &str, default_value: u8) {
-        if let Ok(mut params) = self.params.write() {
-            params.insert(name.to_string(), AtomicU32::new(default_value as u32));
-        }
-    }
-
-    pub fn get_param_u8(&self, name: &str) -> u8 {
-        if let Ok(params) = self.params.read() {
-            if let Some(p) = params.get(name) {
-                return p.load(Ordering::Relaxed) as u8;
-            }
-        }
-        0
-    }
-
-    pub fn set_param_u8(&self, name: &str, value: u8) {
-        if let Ok(params) = self.params.read() {
-            if let Some(param) = params.get(name) {
-                param.store(value as u32, Ordering::Relaxed);
-            }
-        }
+    pub fn set_oscillator_volume(&self, id: usize, volume: f32) {
+        *self
+            .oscillator_volumes
+            .read()
+            .unwrap()
+            .get(&id)
+            .unwrap()
+            .write()
+            .unwrap() = volume;
     }
 }
 
 impl fmt::Display for SynthParams {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Ok(params) = self.params.read() {
-            writeln!(f, "SynthParams:")?;
-            for (key, value) in params.iter() {
-                writeln!(f, "{}: {}", key, f32::from_bits(value.load(Ordering::Relaxed)))?;
-            }
+        writeln!(f, "SynthParams:")?;
+        writeln!(
+            f,
+            "last_active_note: {}",
+            self.last_active_note.load(Ordering::Relaxed)
+        )?;
+        writeln!(
+            f,
+            "are_active_notes: {}",
+            self.are_active_notes.load(Ordering::Relaxed)
+        )?;
+
+        for (id, volume) in self.oscillator_volumes.read().unwrap().iter() {
+            writeln!(f, "osc_{}: {}", id, volume.read().unwrap())?;
         }
+
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_oscillator_volume_management() {
+        let params = SynthParams::new();
+
+        // Initialize and test volume for oscillator 0
+        params.init_oscillator_volume(0);
+        assert_eq!(params.get_oscillator_volume(0), 1.0);
+
+        // Test volume setting
+        params.set_oscillator_volume(0, 0.8);
+        assert_eq!(params.get_oscillator_volume(0), 0.8);
+
+        // Initialize and test another oscillator
+        params.init_oscillator_volume(1);
+        assert_eq!(params.get_oscillator_volume(1), 1.0);
     }
 }

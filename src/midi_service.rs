@@ -1,4 +1,5 @@
 use midir::{Ignore, MidiInput, MidiInputConnection};
+use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex, RwLock};
 
 use crate::audio_modules::params::SynthParams;
@@ -12,9 +13,6 @@ pub struct MidiService {
 pub type SharedMidiService = Arc<RwLock<MidiService>>;
 pub type SharedMidiConnection = Arc<Mutex<Option<MidiInputConnection<()>>>>;
 
-pub const P_LAST_ACTIVE_NOTE: &str = "LastActiveNote";
-pub const P_ARE_ACTIVE_NOTES: &str = "AreActiveNotes";
-
 impl MidiService {
     pub fn new(
         params: Arc<SynthParams>,
@@ -22,9 +20,6 @@ impl MidiService {
         Arc<RwLock<MidiService>>,
         Arc<Mutex<Option<MidiInputConnection<()>>>>,
     ) {
-        params.register_param_u8(P_LAST_ACTIVE_NOTE, 0);
-        params.register_param_u8(P_ARE_ACTIVE_NOTES, 0);
-
         let service = Arc::new(RwLock::new(Self {
             active_notes: Vec::new(),
             last_note: None,
@@ -92,10 +87,14 @@ impl MidiService {
             }
         }
 
-        service.params.set_param_u8(P_LAST_ACTIVE_NOTE, note);
         service
             .params
-            .set_param_u8(P_ARE_ACTIVE_NOTES, !service.active_notes.is_empty() as u8);
+            .last_active_note
+            .store(note, Ordering::Relaxed);
+        service
+            .params
+            .are_active_notes
+            .store(!service.active_notes.is_empty() as u8, Ordering::Relaxed);
     }
 
     pub fn active_notes_read(&self) -> Vec<u8> {

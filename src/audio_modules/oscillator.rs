@@ -1,7 +1,7 @@
 use crate::audio_modules::params::SynthParams;
 use crate::audio_modules::AudioModule;
-use crate::midi_service::P_LAST_ACTIVE_NOTE;
 use std::f32::consts::PI;
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 const SAMPLE_RATE: f32 = 44100.0;
@@ -13,30 +13,33 @@ fn midi_note_to_freq(note: u8) -> f32 {
 pub struct Oscillator {
     params: Arc<SynthParams>,
     phase: f32,
-    pub volume_param: String,
+    id: usize,
 }
 
 impl Oscillator {
     pub fn new(params: Arc<SynthParams>, id: usize) -> Self {
-        let volume_param = format!("osc_{}_volume", id);
-
-        params.register_param_f32(&volume_param, 1.0);
+        // Initialize volume in shared params
+        params.init_oscillator_volume(id);
 
         Self {
             params,
             phase: 0.0,
-            volume_param,
+            id,
         }
     }
 
     pub fn get_volume(&self) -> f32 {
-        self.params.get_param_f32(&self.volume_param)
+        self.params.get_oscillator_volume(self.id)
+    }
+
+    pub fn set_volume(&self, volume: f32) {
+        self.params.set_oscillator_volume(self.id, volume);
     }
 }
 
 impl AudioModule for Oscillator {
     fn process(&mut self, output: &mut [f32]) {
-        let last_note = self.params.get_param_u8(P_LAST_ACTIVE_NOTE);
+        let last_note = self.params.last_active_note.load(Ordering::Relaxed);
         let frequency = midi_note_to_freq(last_note);
 
         let volume = self.get_volume();
@@ -49,5 +52,23 @@ impl AudioModule for Oscillator {
                 self.phase -= 1.0;
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_oscillator_volume() {
+        let params = SynthParams::new();
+        let osc = Oscillator::new(params.clone(), 0);
+
+        // Test default volume
+        assert_eq!(osc.get_volume(), 1.0);
+
+        // Test volume setter
+        osc.set_volume(0.5);
+        assert_eq!(osc.get_volume(), 0.5);
     }
 }
