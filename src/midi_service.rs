@@ -6,28 +6,26 @@ use crate::audio_modules::params::SynthParams;
 
 pub struct MidiService {
     active_notes: Vec<u8>,
-    last_note: Option<u8>,
-    pub params: Arc<SynthParams>,
+    params: Arc<SynthParams>,
 }
 
-pub type SharedMidiService = Arc<RwLock<MidiService>>;
-pub type SharedMidiConnection = Arc<Mutex<Option<MidiInputConnection<()>>>>;
+type SharedMidiService = Arc<RwLock<MidiService>>;
+type SharedMidiConnection = Arc<Mutex<Option<MidiInputConnection<()>>>>;
 
 impl MidiService {
-    pub fn initialize(params: Arc<SynthParams>) -> Arc<Mutex<Option<MidiInputConnection<()>>>> {
-        let service = Arc::new(RwLock::new(Self {
+    pub fn initialize(params: Arc<SynthParams>) -> SharedMidiConnection {
+        let service = Self {
             active_notes: Vec::new(),
-            last_note: None,
             params,
-        }));
+        };
 
         let midi_connection = Arc::new(Mutex::new(None)); // Изначально соединения нет
-        Self::start_midi_listener(Arc::clone(&service), Arc::clone(&midi_connection));
+        Self::start_midi_listener(service, Arc::clone(&midi_connection));
 
         midi_connection
     }
 
-    fn start_midi_listener(service: SharedMidiService, connection: SharedMidiConnection) {
+    fn start_midi_listener(service: Self, connection: SharedMidiConnection) {
         let mut midi_in = MidiInput::new("MIDI Service").expect("Failed to open MIDI input");
         midi_in.ignore(Ignore::None);
 
@@ -40,12 +38,12 @@ impl MidiService {
         let port = &ports[0];
         println!("Using MIDI device: {}", midi_in.port_name(port).unwrap());
 
-        let service_clone = Arc::clone(&service);
+        let shared_service = Arc::new(RwLock::new(service));
         let conn = midi_in.connect(
             port,
             "midi_service",
             move |_, message, _| {
-                Self::handle_message(message, &service_clone);
+                Self::handle_message(message, &shared_service);
             },
             (),
         );
@@ -53,7 +51,7 @@ impl MidiService {
         *connection.lock().unwrap() = conn.ok();
     }
 
-    fn handle_message(message: &[u8], service_clone: &SharedMidiService) {
+    fn handle_message(message: &[u8], shared_service: &SharedMidiService) {
         if message.len() < 3 {
             return;
         }
@@ -61,24 +59,17 @@ impl MidiService {
         let note = message[1];
         let velocity = message[2];
 
-        let mut service = service_clone.write().unwrap();
+        let mut service = shared_service.write().unwrap();
 
         if (status & 0xF0 == 0x90) && (status & 0x0F == 0) && velocity > 0 {
             if !service.active_notes.contains(&note) {
                 service.active_notes.push(note);
-                service.last_note = Some(note);
             }
         } else if ((status & 0xF0 == 0x80) || ((status & 0xF0 == 0x90) && velocity == 0))
             && (status & 0x0F == 0)
         {
             if let Some(pos) = service.active_notes.iter().position(|&n| n == note) {
                 service.active_notes.remove(pos);
-            }
-
-            if let Some(&new_note) = service.active_notes.last() {
-                service.last_note = Some(new_note);
-            } else {
-                service.last_note = None;
             }
         }
 
