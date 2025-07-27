@@ -1,6 +1,6 @@
 use midir::{Ignore, MidiInput, MidiInputConnection};
 use std::sync::atomic::Ordering;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use crate::audio_modules::params::SynthParams;
 
@@ -8,8 +8,6 @@ pub struct MidiService {
     active_notes: Vec<u8>,
     params: Arc<SynthParams>,
 }
-
-type SharedMidiService = Arc<RwLock<MidiService>>;
 
 pub type SharedMidiConnection = Arc<MidiInputConnection<()>>;
 
@@ -35,14 +33,17 @@ impl MidiService {
         let port = &ports[0];
         println!("Using MIDI device: {}", midi_in.port_name(port).unwrap());
 
-        let shared_service = Arc::new(RwLock::new(service));
+        let shared_service = Arc::new(service);
 
+        let mut service_ref = shared_service.clone();
         let conn = midi_in
             .connect(
                 port,
                 "midi_service",
                 move |_, message, _| {
-                    Self::handle_message(message, &shared_service);
+                    if let Some(service) = Arc::get_mut(&mut service_ref) {
+                        Self::handle_message(message, service);
+                    }
                 },
                 (),
             )
@@ -51,15 +52,13 @@ impl MidiService {
         Arc::new(conn)
     }
 
-    fn handle_message(message: &[u8], shared_service: &SharedMidiService) {
+    fn handle_message(message: &[u8], service: &mut MidiService) {
         if message.len() < 3 {
             return;
         }
         let status = message[0];
         let note = message[1];
         let velocity = message[2];
-
-        let mut service = shared_service.write().unwrap();
 
         if (status & 0xF0 == 0x90) && (status & 0x0F == 0) && velocity > 0 {
             if !service.active_notes.contains(&note) {
