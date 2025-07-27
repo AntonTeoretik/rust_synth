@@ -1,6 +1,6 @@
 use midir::{Ignore, MidiInput, MidiInputConnection};
 use std::sync::atomic::Ordering;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 
 use crate::audio_modules::params::SynthParams;
 
@@ -10,7 +10,8 @@ pub struct MidiService {
 }
 
 type SharedMidiService = Arc<RwLock<MidiService>>;
-type SharedMidiConnection = Arc<Mutex<Option<MidiInputConnection<()>>>>;
+
+pub type SharedMidiConnection = Arc<MidiInputConnection<()>>;
 
 impl MidiService {
     pub fn initialize(params: Arc<SynthParams>) -> SharedMidiConnection {
@@ -19,36 +20,35 @@ impl MidiService {
             params,
         };
 
-        let midi_connection = Arc::new(Mutex::new(None)); // Изначально соединения нет
-        Self::start_midi_listener(service, Arc::clone(&midi_connection));
-
-        midi_connection
+        Self::start_midi_listener(service)
     }
 
-    fn start_midi_listener(service: Self, connection: SharedMidiConnection) {
+    fn start_midi_listener(service: Self) -> SharedMidiConnection {
         let mut midi_in = MidiInput::new("MIDI Service").expect("Failed to open MIDI input");
         midi_in.ignore(Ignore::None);
 
         let ports = midi_in.ports();
         if ports.is_empty() {
-            println!("No MIDI input devices found.");
-            return;
+            panic!("No MIDI input devices found");
         }
 
         let port = &ports[0];
         println!("Using MIDI device: {}", midi_in.port_name(port).unwrap());
 
         let shared_service = Arc::new(RwLock::new(service));
-        let conn = midi_in.connect(
-            port,
-            "midi_service",
-            move |_, message, _| {
-                Self::handle_message(message, &shared_service);
-            },
-            (),
-        );
 
-        *connection.lock().unwrap() = conn.ok();
+        let conn = midi_in
+            .connect(
+                port,
+                "midi_service",
+                move |_, message, _| {
+                    Self::handle_message(message, &shared_service);
+                },
+                (),
+            )
+            .expect("Failed to create MIDI connection");
+
+        Arc::new(conn)
     }
 
     fn handle_message(message: &[u8], shared_service: &SharedMidiService) {

@@ -4,6 +4,7 @@ mod midi_service;
 use std::sync::{Arc, Mutex};
 
 use midi_service::MidiService;
+use midi_service::SharedMidiConnection;
 
 use audio_modules::{
     delay::Delay, gain::Gain, gate::Gate, lp_filter::LowPassFilter, oscillator::Oscillator,
@@ -13,10 +14,8 @@ use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     Device, Stream, SupportedStreamConfig,
 };
-use midir::MidiInputConnection;
 
 type SharedSynthParams = Arc<SynthParams>;
-type SharedMidiConnection = Arc<Mutex<Option<MidiInputConnection<()>>>>;
 type SynthCore = (SharedSynthParams, SharedMidiConnection);
 
 fn init_audio_device() -> (Device, SupportedStreamConfig) {
@@ -31,9 +30,9 @@ fn init_audio_device() -> (Device, SupportedStreamConfig) {
 
 fn init_synth_core() -> SynthCore {
     let params = SynthParams::new();
-    let _midi_connection = MidiService::initialize(Arc::clone(&params));
+    let midi_connection = MidiService::initialize(Arc::clone(&params));
 
-    (params, _midi_connection)
+    (params, midi_connection)
 }
 
 fn build_audio_modules(params: &Arc<SynthParams>) -> Vec<Arc<Mutex<dyn AudioModule>>> {
