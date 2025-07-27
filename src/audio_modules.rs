@@ -8,16 +8,16 @@ pub mod oscillator;
 pub mod params;
 
 pub trait AudioModule: Send + Sync {
-    fn process(&mut self, output: &mut [f32]);
+  fn process(&mut self, output: &mut [f32]);
 }
 
 pub trait Shared {
-    fn shared(self) -> Arc<Mutex<Self>>
-    where
-        Self: Sized,
-    {
-        Arc::new(Mutex::new(self))
-    }
+  fn shared(self) -> Arc<Mutex<Self>>
+  where
+    Self: Sized,
+  {
+    Arc::new(Mutex::new(self))
+  }
 }
 
 impl<T: AudioModule> Shared for T {}
