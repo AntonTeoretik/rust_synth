@@ -14,7 +14,7 @@ pub type SharedMidiService = Arc<RwLock<MidiService>>;
 pub type SharedMidiConnection = Arc<Mutex<Option<MidiInputConnection<()>>>>;
 
 impl MidiService {
-    pub fn new(params: Arc<SynthParams>) -> Arc<Mutex<Option<MidiInputConnection<()>>>> {
+    pub fn initialize(params: Arc<SynthParams>) -> Arc<Mutex<Option<MidiInputConnection<()>>>> {
         let service = Arc::new(RwLock::new(Self {
             active_notes: Vec::new(),
             last_note: None,

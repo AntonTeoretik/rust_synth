@@ -15,6 +15,10 @@ use cpal::{
 };
 use midir::MidiInputConnection;
 
+type SharedSynthParams = Arc<SynthParams>;
+type SharedMidiConnection = Arc<Mutex<Option<MidiInputConnection<()>>>>;
+type SynthCore = (SharedSynthParams, SharedMidiConnection);
+
 fn init_audio_device() -> (Device, SupportedStreamConfig) {
     let host = cpal::default_host();
     let device = host.default_output_device().expect("No audio device found");
@@ -25,22 +29,19 @@ fn init_audio_device() -> (Device, SupportedStreamConfig) {
     (device, config)
 }
 
-fn init_synth_core() -> (
-    Arc<SynthParams>,
-    Arc<Mutex<Option<MidiInputConnection<()>>>>,
-) {
+fn init_synth_core() -> SynthCore {
     let params = SynthParams::new();
-    let _midi_connection = MidiService::new(Arc::clone(&params));
+    let _midi_connection = MidiService::initialize(Arc::clone(&params));
 
     (params, _midi_connection)
 }
 
 fn build_audio_modules(params: &Arc<SynthParams>) -> Vec<Arc<Mutex<dyn AudioModule>>> {
-    let osc = Oscillator::new(Arc::clone(&params), 0).shared();
-    let gate = Gate::new(Arc::clone(&params), 0.05, 0.2, 0.0, 1.0).shared();
+    let osc = Oscillator::new(Arc::clone(params), 0).shared();
+    let gate = Gate::new(Arc::clone(params), 0.05, 0.2, 0.0, 1.0).shared();
     let gain = Gain::new(1.0).shared();
 
-    let filter_gate = Gate::new(Arc::clone(&params), 0.01, 0.1, 0.1, 5.0);
+    let filter_gate = Gate::new(Arc::clone(params), 0.01, 0.1, 0.1, 5.0);
     let lp_filter = LowPassFilter::new(55.0, 0.99, 10.0, filter_gate).shared();
 
     let delay = Delay::new(1000.0, 0.1, 0.5).shared();

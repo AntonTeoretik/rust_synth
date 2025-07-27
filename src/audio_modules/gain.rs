@@ -15,7 +15,7 @@ impl AudioModule for Gain {
         for sample in output.iter_mut() {
             *sample *= self.gain;
             // Мягкое ограничение с использованием сигмоиды
-            *sample = *sample / (1.0 + sample.abs());
+            *sample /= 1.0 + sample.abs();
         }
     }
 }
