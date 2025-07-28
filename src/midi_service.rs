@@ -72,6 +72,6 @@ impl MidiService {
     service
       .params
       .are_active_notes
-      .store(!service.active_notes.is_empty() as u8, Ordering::Relaxed);
+      .store(!service.active_notes.is_empty(), Ordering::Relaxed);
   }
 }

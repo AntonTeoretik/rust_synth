@@ -41,13 +41,13 @@ impl Gate {
   }
 
   fn update_state(&mut self) {
-    let has_active_notes = self.synth_params.are_active_notes.load(Ordering::Relaxed) > 0;
+    let has_active_notes = self.synth_params.are_active_notes.load(Ordering::Relaxed);
     match self.state {
       GateState::Release if has_active_notes => self.state = GateState::Attack,
       GateState::Attack | GateState::Decay | GateState::Sustain if !has_active_notes => {
         self.state = GateState::Release
-      }
-      _ => {}
+      },
+      _ => {},
     }
   }
 
@@ -60,21 +60,21 @@ impl Gate {
           self.envelope = 1.0;
           self.state = GateState::Decay;
         }
-      }
+      },
       GateState::Decay => {
         self.envelope -= 1.0 / (self.decay * 44100.0);
         if self.envelope <= self.sustain {
           self.envelope = self.sustain;
           self.state = GateState::Sustain;
         }
-      }
-      GateState::Sustain => {}
+      },
+      GateState::Sustain => {},
       GateState::Release => {
         self.envelope -= 1.0 / (self.release * 44100.0);
         if self.envelope <= 0.0 {
           self.envelope = 0.0;
         }
-      }
+      },
     }
   }
 }

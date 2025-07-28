@@ -1,4 +1,7 @@
-use std::sync::{atomic::AtomicU8, Arc};
+use std::sync::{
+  atomic::{AtomicBool, AtomicU8},
+  Arc,
+};
 
 pub const MAX_OSCILLATORS: usize = 8;
 pub const MAX_VOLUME: u8 = 255;
@@ -6,7 +9,7 @@ pub const MAX_VOLUME: u8 = 255;
 pub struct SynthParams {
   // MIDI parameters
   pub last_active_note: AtomicU8,
-  pub are_active_notes: AtomicU8,
+  pub are_active_notes: AtomicBool,
 
   // Oscillator volumes (fixed-size array)
   pub oscillator_volumes: [AtomicU8; MAX_OSCILLATORS],
@@ -18,7 +21,7 @@ impl SynthParams {
 
     Arc::new(Self {
       last_active_note: AtomicU8::new(0),
-      are_active_notes: AtomicU8::new(0),
+      are_active_notes: AtomicBool::new(false),
       oscillator_volumes: volumes,
     })
   }
