@@ -7,7 +7,7 @@ use midi_service::MidiService;
 
 use audio_modules::{
   delay::Delay, gain::Gain, gate::Gate, lp_filter::LowPassFilter, oscillator::Oscillator,
-  params::SynthParams, AudioModule, Shared,
+  state::SynthState, AudioModule, Shared,
 };
 use cpal::{
   traits::{DeviceTrait, HostTrait, StreamTrait},
@@ -15,7 +15,7 @@ use cpal::{
 };
 use midir::MidiInputConnection;
 
-type SharedSynthParams = Arc<SynthParams>;
+type SharedSynthParams = Arc<SynthState>;
 type SynthCore = (SharedSynthParams, MidiInputConnection<()>);
 
 fn init_audio_device() -> (Device, SupportedStreamConfig) {
@@ -29,13 +29,13 @@ fn init_audio_device() -> (Device, SupportedStreamConfig) {
 }
 
 fn init_synth_core() -> SynthCore {
-  let params = SynthParams::new();
+  let params = SynthState::new();
   let midi_connection = MidiService::start_midi_listener(Arc::clone(&params));
 
   (params, midi_connection)
 }
 
-fn build_audio_modules(params: &Arc<SynthParams>) -> Vec<Arc<Mutex<dyn AudioModule>>> {
+fn build_audio_modules(params: &Arc<SynthState>) -> Vec<Arc<Mutex<dyn AudioModule>>> {
   let osc = Oscillator::new(Arc::clone(params), 0).shared();
   let gate = Gate::new(Arc::clone(params), 0.05, 0.2, 0.0, 1.0).shared();
   let gain = Gain::new(1.0).shared();

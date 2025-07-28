@@ -5,7 +5,7 @@ pub mod gain;
 pub mod gate;
 pub mod lp_filter;
 pub mod oscillator;
-pub mod params;
+pub mod state;
 
 pub trait AudioModule: Send + Sync {
   fn process(&mut self, output: &mut [f32]);

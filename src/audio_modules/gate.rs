@@ -1,5 +1,5 @@
 use crate::audio_modules::AudioModule;
-use crate::SynthParams;
+use crate::SynthState;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
@@ -10,7 +10,7 @@ pub struct Gate {
   release: f32,
   pub envelope: f32,
   state: GateState,
-  synth_params: Arc<SynthParams>,
+  synth_params: Arc<SynthState>,
 }
 
 #[derive(PartialEq)]
@@ -23,7 +23,7 @@ enum GateState {
 
 impl Gate {
   pub fn new(
-    synth_params: Arc<SynthParams>,
+    synth_params: Arc<SynthState>,
     attack: f32,
     decay: f32,
     sustain: f32,

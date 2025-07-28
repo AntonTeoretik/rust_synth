@@ -1,4 +1,4 @@
-use crate::audio_modules::params::{SynthParams, MAX_OSCILLATORS};
+use crate::audio_modules::state::{SynthState, MAX_OSCILLATORS};
 use crate::audio_modules::AudioModule;
 use std::f32::consts::PI;
 use std::sync::atomic::Ordering;
@@ -11,13 +11,13 @@ fn midi_note_to_freq(note: u8) -> f32 {
 }
 
 pub struct Oscillator {
-  params: Arc<SynthParams>,
+  params: Arc<SynthState>,
   phase: f32,
   id: usize,
 }
 
 impl Oscillator {
-  pub fn new(params: Arc<SynthParams>, id: usize) -> Self {
+  pub fn new(params: Arc<SynthState>, id: usize) -> Self {
     // ID must be within array bounds
     assert!(id < MAX_OSCILLATORS);
 

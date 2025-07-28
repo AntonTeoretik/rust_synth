@@ -6,7 +6,7 @@ use std::sync::{
 pub const MAX_OSCILLATORS: usize = 8;
 pub const MAX_VOLUME: u8 = 255;
 
-pub struct SynthParams {
+pub struct SynthState {
   // MIDI parameters
   pub last_active_note: AtomicU8,
   pub are_active_notes: AtomicBool,
@@ -15,7 +15,7 @@ pub struct SynthParams {
   pub oscillator_volumes: [AtomicU8; MAX_OSCILLATORS],
 }
 
-impl SynthParams {
+impl SynthState {
   pub fn new() -> Arc<Self> {
     let volumes = [(); MAX_OSCILLATORS].map(|_| AtomicU8::new(MAX_VOLUME));
 

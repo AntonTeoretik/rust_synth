@@ -2,15 +2,15 @@ use midir::{MidiInput, MidiInputConnection};
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
-use crate::audio_modules::params::SynthParams;
+use crate::audio_modules::state::SynthState;
 
 pub struct MidiService {
   active_notes: Vec<u8>,
-  params: Arc<SynthParams>,
+  params: Arc<SynthState>,
 }
 
 impl MidiService {
-  pub fn start_midi_listener(params: Arc<SynthParams>) -> MidiInputConnection<()> {
+  pub fn start_midi_listener(params: Arc<SynthState>) -> MidiInputConnection<()> {
     let service = Self {
       active_notes: Vec::new(),
       params,
