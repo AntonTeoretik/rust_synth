@@ -21,22 +21,36 @@ Introduction to rust
 ```
 
 2. Use T::from, T::into for complex types
+```rust
+    let s1: String = String::from("hello"); // From<&str> for String
+    let s2: String = "world".into();        // Into<String> for &str
+
+    println!("{s1} {s2}");
+```   
 
 ---
 ## Variable creation
 
 ```rust
-let x : i32 = 1;
-println!("{}", x);
+  let x : i32 = 1;
+  println!("{}", x);
 ```
 
 ```rust
-println!("{}");
-println!("{:?}");
-println!("{:#?}");
-
+  println!("{}");
+  println!("{:?}");
+  println!("{:#?}");
 
 ```
+
+---
+## Mutable variables
+```rust
+  let mut x = 5;
+  x = 10;
+  println!("{}", x);
+```
+
 
 ---
 
@@ -114,14 +128,25 @@ fn is_edge_chess_coordinate(x: char, y: i32) -> bool {
 }
 ```
 
-## Mutable and ownership
+## While
 ```rust
-fn main() {
-  let mut x = 2;
-  println!("x = {}", x);
+fn factorial(n: u32) -> u32 {
+  let mut result = 1;
+  let i = 1;
+  while i <= n {
+    result *= i;
+  }
 
-  x = 5;
-  println!("x = {}", x); -- ok
+  result
+}
+
+fn gcd(mut a: u32, mut b: u32) -> u32 {
+    while b != 0 {
+        let r = a % b;
+        a = b;
+        b = r;
+    }
+    a
 }
 ```
 
