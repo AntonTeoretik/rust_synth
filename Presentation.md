@@ -275,7 +275,129 @@ fn main() {
 
 ```
 
-# Struct, enum, Optional, Result, 
+---
+## Вытаскиваем элемент строки
+```rust
+  let strings = vec!["Hello, ".to_string(), "World!".to_string()];
+  let hello = &strings[0];
+
+  // let hello = strings[0];
+
+  for x in &strings {
+    println!("{x}");
+  }
+```
+```rust
+  let mut s = String::from("Hello");
+  let c: &mut String = &mut s;
+
+  let d = c; // ✅ компилируется, c больше использовать нельзя
+  d.push_str(" world");
+  println!("{d}");
+```
+
+## Struct
+
+```rust
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+let p = Point { x: 10, y: 20 };
+println!("({}, {})", p.x, p.y);
+```
+
+
+```rust
+struct Color(u8, u8, u8);
+
+let red = Color(255, 0, 0);
+println!("R = {}", red.0);
+```
+
+```rust
+impl Point {
+    fn new(x: i32, y: i32) -> Self { // конструктор
+        Self { x, y }
+    }
+
+    fn distance(&self) -> f64 {      // метод
+        ((self.x.pow(2) + self.y.pow(2)) as f64).sqrt()
+    }
+
+    fn move_x(&mut self, dx: i32) {  // метод с &mut self
+        self.x += dx;
+    }
+}
+
+
+let mut p = Point::new(3, 4);
+println!("{}", p.distance()); // 5
+p.move_x(2);
+
+```
+
+```rust
+enum Shape {
+    Circle(f64),             // кортеж
+    Rectangle { w: f64, h: f64 }, // структура
+}
+```
+
+```rust
+impl Shape {
+    fn area(&self) -> f64 {
+        match self {
+            Shape::Circle(r) => std::f64::consts::PI * r * r,
+            Shape::Rectangle { w, h } => w * h,
+        }
+    }
+}
+
+let s1 = Shape::Circle(2.0);
+let s2 = Shape::Rectangle { w: 3.0, h: 4.0 };
+println!("area1 = {}", s1.area());
+```
+
+## Option and Result
+```rust
+fn divide_optional(a: i32, b: i32) -> Option<i32> {
+    if b == 0 {
+        None           // нет результата
+    } else {
+        Some(a / b)    // результат есть
+    }
+}
+
+if let Some(result) = divide_optional(10, 2) {
+    println!("Результат: {result}");
+} else {
+    println!("Деление на ноль!");
+}
+
+```
+
+```rust
+fn divide_result(a: i32, b: i32) -> Result<i32, &'static str> {
+    if b == 0 {
+        Err("Деление на ноль")
+    } else {
+        Ok(a / b)
+    }
+}
+
+
+match divide_result(10, 0) {
+    Ok(result) => println!("Результат: {result}"),
+    Err(msg) => println!("Ошибка: {msg}"),
+}
+
+```
+```rust
+let x = divide_optional(10, 0).unwrap_or(999); 
+println!("{x}"); // 999
+```
 
 Mutex, Arc -- на самом проекте.
 Лямбды -- тоже на нём
