@@ -402,5 +402,76 @@ println!("{x}"); // 999
 Mutex, Arc -- на самом проекте.
 Лямбды -- тоже на нём
 
+---
+
+# Generic
+```rust
+use num_traits::Float;
+  struct Point<T> {
+    x: T,
+    y: T,
+  }
+  
+  impl<T> Point<T> {
+    fn new(x: T, y: T) -> Self {
+      return Point { x, y };
+    }
+  }
+  
+  impl<T: Float> Point<T> {
+    fn distance_to_origin(&self) -> T {
+      (self.x.powi(2) + self.y.powi(2)).sqrt()
+    }
+  }
+```
+
+## Traits
+```rust
+trait Measurable {
+    fn measure(&self) -> f64; // возвращаем "размер" как число
+}
+```
+```rust
+struct Segment {
+    x1: f64,
+    y1: f64,
+    x2: f64,
+    y2: f64,
+}
+
+impl Measurable for Segment {
+    fn measure(&self) -> f64 {
+        let dx = self.x2 - self.x1;
+        let dy = self.y2 - self.y1;
+        (dx*dx + dy*dy).sqrt() // длина отрезка
+    }
+}
+
+struct Circle {
+    r: f64,
+}
+
+impl Measurable for Circle {
+    fn measure(&self) -> f64 {
+        std::f64::consts::PI * self.r * self.r // площадь круга
+    }
+}
+```
+
+
+##
+```rust
+fn print_measure<T: Measurable>(item: &T) {
+    println!("Measure = {}", item.measure());
+}
+
+fn main() {
+    let seg = Segment { x1: 0.0, y1: 0.0, x2: 3.0, y2: 4.0 };
+    let circle = Circle { r: 2.0 };
+
+    print_measure(&seg);    // 5.0
+    print_measure(&circle); // 12.566...
+}
+```
 
 
