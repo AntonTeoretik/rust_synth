@@ -475,3 +475,49 @@ fn main() {
 ```
 
 
+# Задачка
+
+```rust
+trait Movable {
+    fn r#move(&mut self, dx: f32, dy: f32); 
+    fn distance_to(&self, other: &Self) -> f32;
+}
+
+struct Particle {
+    x: f32,
+    y: f32,
+    mass: f32,
+    charge: f32,
+}
+
+impl Physical for Particle {
+    fn mass(&self) -> f32 {
+        self.mass
+    }
+    fn charge(&self) -> f32 {
+        self.charge
+    }
+}
+
+impl Movable for Particle {
+    fn move_by(&mut self, dx: f32, dy: f32) {
+        self.x += dx;
+        self.y += dy;
+    }
+
+    fn position(&self) -> (f32, f32) {
+        (self.x, self.y)
+    }
+}
+
+fn electrostatic_force<A: Physical + Movable, B: Physical + Movable>(a: &A, b: &B) -> f32 {
+    let k = 8.9875e9; // Константа Кулона
+    let q1 = a.charge();
+    let q2 = b.charge();
+    let r = a.distance_to(b).max(1e-6); // чтобы не делить на 0
+
+    k * q1 * q2 / (r * r)
+}
+
+
+```
